@@ -31,5 +31,5 @@ def fte(x, B, u):
     sfBar = np.fft.fftshift(np.fft.fft(sBar))
     sfBar = sfBar / np.max(np.abs(sfBar))
     # Compute FTE metric
-    J = np.linalg.norm(abs(sfBar)**2-u)
+    J = np.linalg.norm(np.power(abs(sfBar),2)-u)
     return J, sBar, sfBar
