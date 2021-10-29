@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# Python
+*.ipynb_checkpoints
+
+# Hidden folders
+*.vscode
