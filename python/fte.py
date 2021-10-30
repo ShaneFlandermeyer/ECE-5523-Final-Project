@@ -1,5 +1,6 @@
 import numpy as np
 
+import matplotlib.pyplot as plt
 
 def fte(x, B, u):
     """
@@ -20,7 +21,7 @@ def fte(x, B, u):
       - sfBar: The shifted DFT of the phase coded waveform, padded to length 2M-1
     """
     # Phase coded waveform
-    x = np.array(x)
+    # x = np.array(x)
     s = np.exp(1j*B@x)
     if s.ndim == 1:
       s = s[:, np.newaxis]
@@ -28,8 +29,9 @@ def fte(x, B, u):
     M = s.shape[0]
     # Compute the length-2M-1 DFT of the phase coded waveform
     sBar = np.concatenate((s, np.zeros((M-1, s.shape[1]))))
-    sfBar = np.fft.fftshift(np.fft.fft(sBar))
-    sfBar = sfBar / np.max(np.abs(sfBar))
+    # 
+    sfBar = np.fft.fftshift(np.fft.fft(sBar,axis=0))
+    sfBar = sfBar / max(abs(sfBar))
     # Compute FTE metric
-    J = np.linalg.norm(np.power(abs(sfBar),2)-u)
+    J = np.linalg.norm(np.square(sfBar)-u[:,np.newaxis])
     return J, sBar, sfBar
