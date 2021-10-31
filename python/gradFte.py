@@ -20,6 +20,8 @@ def gradFte(x, B, u):
     s = np.exp(1j*B@x)
     if s.ndim == 1:
       s = s[:, np.newaxis]
+    if u.ndim == 1:
+      u = u[:,np.newaxis]
       
     # Length of the phase-coded waveform
     M = s.shape[0]
@@ -33,5 +35,6 @@ def gradFte(x, B, u):
     M, Ntilde = B.shape
     BBar = np.concatenate((B.T, np.zeros((Ntilde, M-1))),axis=1).T
     # Gradient computation
-    return 2/J*BBar.T@np.imag(
-      np.conj(sBar) * ifft(ifftshift((abs(sfBar)**2-u[:, np.newaxis])*sfBar),axis=0))
+    grad = 2/J*BBar.T@np.imag(
+      np.conj(sBar) * ifft(ifftshift((abs(sfBar)**2-u)*sfBar),axis=0))
+    return grad

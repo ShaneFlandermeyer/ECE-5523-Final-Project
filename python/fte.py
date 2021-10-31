@@ -25,6 +25,8 @@ def fte(x, B, u):
     s = np.exp(1j*B@x)
     if s.ndim == 1:
       s = s[:, np.newaxis]
+    if u.ndim == 1:
+      u = u[:,np.newaxis]
     # Length of the phase-coded waveform
     M = s.shape[0]
     # Compute the length-2M-1 DFT of the phase coded waveform
@@ -33,5 +35,5 @@ def fte(x, B, u):
     sfBar = np.fft.fftshift(np.fft.fft(sBar,axis=0))
     sfBar = sfBar / max(abs(sfBar))
     # Compute FTE metric
-    J = np.linalg.norm(abs(sfBar)**2-u)
+    J = np.linalg.norm(abs(sfBar)**2-u,axis=0)
     return J
