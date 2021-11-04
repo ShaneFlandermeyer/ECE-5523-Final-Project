@@ -31,7 +31,7 @@ function funPcfmHelper(m,K)
 end
 
 function funPcfm(u,B,BBar,x)
-  iter = 2^7
+  iter = 2^4
   m::Int64 = trunc((length(u)+1)/2)
   epsilon = 10^-3
   i = 1
@@ -68,5 +68,5 @@ end
 display(plot!(u))
 
 println("Act time: ", time)
-iter = 2^7
+iter = 2^4
 println("Time per iter: ", time / iter)
