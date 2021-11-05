@@ -92,10 +92,10 @@ function funPcfm(u,a,iter,K)
     x -= vt
     vtOld = vt
     #Extra Functions fro visulation.
-    #s = exp.(im.*B*x)
-    #sb = vcat(s, zeros(m-1,1))
-    #sbf =  fftshift(fft(sb))
-    #sbf = sbf ./maximum(abs.(sbf))
+    s = exp.(im.*B*x)
+    sb = vcat(s, zeros(m-1,1))
+    sbf =  fftshift(fft(sb))
+    sbf = sbf ./maximum(abs.(sbf))
     #display(plot(real((abs.(autocorr(sbf))))))
     #display(plot(10*log10.(abs.(sbf).^2),ylim=(-50, 0)))
     #display(plot!(10*log10.(u),ylim=(-50, 0)))
