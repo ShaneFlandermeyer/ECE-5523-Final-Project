@@ -53,28 +53,15 @@ function funPcfm(u,a,iter,K)
     x -= vt
     vtOld = vt
 
-    s = exp.(im.*B*x)
-    sb = vcat(s, zeros(m-1,1))
-    sbf =  fftshift(fft(sb))
-    sbf = sbf ./maximum(abs.(sbf))
-    display(plot(real((abs.(autocorr(sbf))))))
-#    display(plot(10*log10.(abs.(sbf).^2),ylim=(-50, 0)))
-#    display(plot!(10*log10.(u),ylim=(-50, 0)))
+    #s = exp.(im.*B*x)
+    #sb = vcat(s, zeros(m-1,1))
+    #sbf =  fftshift(fft(sb))
+    #sbf = sbf ./maximum(abs.(sbf))
+    #display(plot(real((abs.(autocorr(sbf))))))
+    #display(plot(10*log10.(abs.(sbf).^2),ylim=(-50, 0)))
+    #display(plot!(10*log10.(u),ylim=(-50, 0)))
     #display(plot(Jvec))
     i += 1
   end
   return x
 end
-m = 128
-u = abs.(gaussian((2*m-1,1),0.1; padding = 0, zerophase = false)).^2
-u[findall(<(-50), 10*log10.(u))] .= 10^-5
-#u = ones(64, 1)
-#u = vcat(u, zeros(32-1,1).+0.001)
-#u = vcat(zeros(32,1).+0.001,u)
-#display(plot(10*log10.(u),ylim=(-50, 0)))
-iter = 1000
-time = @elapsed begin
-   result = funPcfm(u,0,iter,3)
-end
-println("Act time: ", time)
-println("Time per iter: ", time / iter)
