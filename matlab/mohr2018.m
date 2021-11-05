@@ -46,6 +46,7 @@ fs = 200e6;
 freqStep = 2*fs/(2*M-1);
 freqAxis = (-fs:freqStep:fs-freqStep).';
 [~,~,initialSbar] = fte(x,B,u);
+plot(freqAxis,u)
 %% Gradient-Based Optimization
 % Function handles for the cost function and its gradient, where we assume
 % the basis matrix B and spectral template u remain unchanged
