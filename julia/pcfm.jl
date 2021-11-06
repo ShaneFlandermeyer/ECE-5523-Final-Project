@@ -1,9 +1,6 @@
 using FFTW
 using LinearAlgebra
 using DSP
-using Plots
-gr()
-plot()
 function autocorr(x)
   return conv(x,conj.(x[end:-1:1]))
 end
@@ -12,8 +9,8 @@ end
 Compute the gradient for the PCFM algorithm.
   ...
 # Arguments
-- `B::Array`: M X M Orthonormal basis.
-- `Bb::Array`: 2M-1 X M Orthonormal basis.
+- `B::Array`: M X M Orthogonal basis.
+- `Bb::Array`: 2M-1 X M Orthogonal basis.
 - `x::Vector`: M X 1 Phase coefficients.
 - `m::Integer`: Size.
 - `u::Vector`: 2M-1 X 1 Window Function.
@@ -91,6 +88,7 @@ function funPcfm(u,a,iter,K)
     vt = β.*vtOld.+μ.*∇
     x -= vt
     vtOld = vt
+<<<<<<< HEAD
     #Extra Functions for visulation.
     s = exp.(im.*B*x)
     sb = vcat(s, zeros(m-1,1))
@@ -98,6 +96,14 @@ function funPcfm(u,a,iter,K)
     sbf = sbf ./maximum(abs.(sbf))
     corr = abs.(autocorr(s)) ./ maximum(abs.(autocorr(s)))
     display(plot(10*log10.(corr),ylim=(-50,0)))
+=======
+    #Extra Functions fro visulation.
+    #s = exp.(im.*B*x)
+    #sb = vcat(s, zeros(m-1,1))
+    #sbf =  fftshift(fft(sb))
+    #sbf = sbf ./maximum(abs.(sbf))
+    #display(plot(real((abs.(autocorr(sbf))))))
+>>>>>>> 755e4ad87942352770d2d7b4396bf3bec75f700e
     #display(plot(10*log10.(abs.(sbf).^2),ylim=(-50, 0)))
     #display(plot!(10*log10.(u),ylim=(-50, 0)))
     #display(plot(Jvec))
