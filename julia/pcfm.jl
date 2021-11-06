@@ -5,7 +5,7 @@ using Plots
 gr()
 plot()
 function autocorr(x)
-  return conv(x,x[end:-1:1])
+  return conv(x,conj.(x[end:-1:1]))
 end
 """
     ∇J(B,Bb,x,m,u,a)
@@ -55,7 +55,7 @@ function funPcfmHelper(m,K)
   B = cumsum(g, dims = 1)
   for i = 2:nt
     #Logical Shift g
-    g = vcat(0, g[1:end-1])
+    g = vcat(zeros(K,1), g[1:end-K])
     B = hcat(B, cumsum(g, dims = 1))
   end
   x = minAlpha .+(maxAlpha-minAlpha).*rand(Float64,(nt, 1))
@@ -78,7 +78,7 @@ function funPcfm(u,a,iter,K)
   m = trunc(Int,(length(u)+1)/2)
   (B,Bb,x) = funPcfmHelper(m,K)
   #Gradient Descent Parameters
-  μ = 0.25
+  μ = 0.75
   β = 0.5
   #Vector of error at each iteration.
   Jvec = ones(iter-1,1)
@@ -91,12 +91,13 @@ function funPcfm(u,a,iter,K)
     vt = β.*vtOld.+μ.*∇
     x -= vt
     vtOld = vt
-    #Extra Functions fro visulation.
+    #Extra Functions for visulation.
     s = exp.(im.*B*x)
     sb = vcat(s, zeros(m-1,1))
     sbf =  fftshift(fft(sb))
     sbf = sbf ./maximum(abs.(sbf))
-    #display(plot(real((abs.(autocorr(sbf))))))
+    corr = abs.(autocorr(s)) ./ maximum(abs.(autocorr(s)))
+    display(plot(10*log10.(corr),ylim=(-50,0)))
     #display(plot(10*log10.(abs.(sbf).^2),ylim=(-50, 0)))
     #display(plot!(10*log10.(u),ylim=(-50, 0)))
     #display(plot(Jvec))
