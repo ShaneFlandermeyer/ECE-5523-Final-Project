@@ -1,6 +1,7 @@
 using FFTW
 using LinearAlgebra
 using DSP
+using Plots
 function autocorr(x)
   return conv(x,conj.(x[end:-1:1]))
 end
@@ -88,7 +89,7 @@ function funPcfm(u,a,iter,K)
     vt = β.*vtOld.+μ.*∇
     x -= vt
     vtOld = vt
-<<<<<<< HEAD
+
     #Extra Functions for visulation.
     s = exp.(im.*B*x)
     sb = vcat(s, zeros(m-1,1))
@@ -96,17 +97,6 @@ function funPcfm(u,a,iter,K)
     sbf = sbf ./maximum(abs.(sbf))
     corr = abs.(autocorr(s)) ./ maximum(abs.(autocorr(s)))
     display(plot(10*log10.(corr),ylim=(-50,0)))
-=======
-    #Extra Functions fro visulation.
-    #s = exp.(im.*B*x)
-    #sb = vcat(s, zeros(m-1,1))
-    #sbf =  fftshift(fft(sb))
-    #sbf = sbf ./maximum(abs.(sbf))
-    #display(plot(real((abs.(autocorr(sbf))))))
->>>>>>> 755e4ad87942352770d2d7b4396bf3bec75f700e
-    #display(plot(10*log10.(abs.(sbf).^2),ylim=(-50, 0)))
-    #display(plot!(10*log10.(u),ylim=(-50, 0)))
-    #display(plot(Jvec))
     i += 1
   end
   return x
