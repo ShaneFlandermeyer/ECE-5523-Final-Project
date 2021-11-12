@@ -2,22 +2,7 @@ using FFTW
 using LinearAlgebra
 using DSP
 using Plots
-# TODO: Remove me
-# nt = m
-#   minAlpha = -pi/K
-#   maxAlpha = pi/K
-#   #Hard way of making a ramp function.
-#   g = ones(K, 1)./K
-#   g = vcat(g, zeros(m-K,1))
-#   B = cumsum(g, dims = 1)
-#   for i = 2:nt
-#     #Logical Shift g
-#     g = vcat(zeros(K,1), g[1:end-K])
-#     B = hcat(B, cumsum(g, dims = 1))
-#   end
-#   x = minAlpha .+(maxAlpha-minAlpha).*rand(Float64,(nt, 1))
-#   Bb = vcat(B,zeros(m-1, nt))
-#   return (B,Bb,x)
+
 function pcfm(m,k)
   """
   pcfm(m,k)
@@ -78,34 +63,6 @@ function ∇J(B,Bb,x,m,u,a)
   return (J,factor/(J).*transpose(Bb)*imag.(conj.(sb).*ifft(ifftshift(diff.*sbf))))
 end
 
-
-function funPcfmHelper(m,K)
-  """
-  funPcfmHelper(m,K)
-  Computes extra values for use in gradient calculation.
-    ...
-  # Arguments
-  - `m::Integer`: Size.
-  - `K::Integer`: Oversampling Factor.
-  ...
-  """
-  nt = m
-  minAlpha = -pi/K
-  maxAlpha = pi/K
-  #Hard way of making a ramp function.
-  g = ones(K, 1)./K
-  g = vcat(g, zeros(m-K,1))
-  B = cumsum(g, dims = 1)
-  for i = 2:nt
-    #Logical Shift g
-    g = vcat(zeros(K,1), g[1:end-K])
-    B = hcat(B, cumsum(g, dims = 1))
-  end
-  x = minAlpha .+(maxAlpha-minAlpha).*rand(Float64,(nt, 1))
-  Bb = vcat(B,zeros(m-1, nt))
-  return (B,Bb,x)
-end
-
 function funPcfm(u,a,iter,K)
   """
   funPcfm(u,a,iter,K)
@@ -120,7 +77,9 @@ function funPcfm(u,a,iter,K)
   """
   #Calculate m from u.
   m = trunc(Int,(length(u)+1)/2)
-  (B,Bb,x) = funPcfmHelper(m,K)
+  (s,x,B) = pcfm(m,K)
+  Bb = vcat(B,zeros(m-1, trunc(Int,m/k)))
+  # (B,Bb,x) = funPcfmHelper(m,K)
   #Gradient Descent Parameters
   μ = 0.75
   β = 0.5
@@ -141,13 +100,23 @@ function funPcfm(u,a,iter,K)
     sb = vcat(s, zeros(m-1,1))
     sbf =  fftshift(fft(sb))
     sbf = sbf ./maximum(abs.(sbf))
-    corr = abs.(autocorr(s)) ./ maximum(abs.(autocorr(s)))
-    display(plot(10*log10.(corr),ylim=(-50,0)))
+    display(plot!(10*log10.(u)))
+    display(plot(10*log10.(abs.(sbf).^2),ylim=(-50,0)))
+    
+    # corr = abs.(autocorr(s)) ./ maximum(abs.(autocorr(s)))
+    # display(plot(10*log10.(corr),ylim=(-50,0)))
     i += 1
   end
   return x
 end
 
-m = 900
+m = 150
 k = 3
 (s,alpha,B) = pcfm(m,k)
+# Window function
+u = gaussian((2*m-1,1),0.15; padding = 0, zerophase = false)
+u[findall(<(-50), 10*log10.(u))] .= 10^-5
+u = abs.(u).^2
+a = 0
+iter = 1000
+funPcfm(u,a,iter,k)
