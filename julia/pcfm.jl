@@ -2,23 +2,66 @@ using FFTW
 using LinearAlgebra
 using DSP
 using Plots
+# TODO: Remove me
+# nt = m
+#   minAlpha = -pi/K
+#   maxAlpha = pi/K
+#   #Hard way of making a ramp function.
+#   g = ones(K, 1)./K
+#   g = vcat(g, zeros(m-K,1))
+#   B = cumsum(g, dims = 1)
+#   for i = 2:nt
+#     #Logical Shift g
+#     g = vcat(zeros(K,1), g[1:end-K])
+#     B = hcat(B, cumsum(g, dims = 1))
+#   end
+#   x = minAlpha .+(maxAlpha-minAlpha).*rand(Float64,(nt, 1))
+#   Bb = vcat(B,zeros(m-1, nt))
+#   return (B,Bb,x)
+function pcfm(m,k)
+  """
+  pcfm(m,k)
+  Compute the PCFM waveform for a randomly initialized phase code
+
+    # Arguments
+    - `m::Integer`: Phase code length
+    - `k::Integer`: Oversampling factor
+  """
+  # Number of unique phase code values (i.e., no oversampling)
+  n = trunc(Int,m/k)
+  # Construct the array of phase code changes
+  minAlpha = -pi/k
+  maxAlpha = pi/k
+  alpha = minAlpha .+(maxAlpha-minAlpha).*rand(Float64,(n, 1))
+  # Phase shaping filter
+  g = ones(k,1)./k
+  g = vec(vcat(g,zeros(m-k,1)))
+  B = zeros(m,n)
+  for ii in 1:n
+    B[:,ii] = cumsum(shiftsignal(g,ii*k))
+  end
+  s = exp.(im.*B*alpha)
+  return (s,alpha,B)
+end
+
 function autocorr(x)
   return conv(x,conj.(x[end:-1:1]))
 end
-"""
-    ∇J(B,Bb,x,m,u,a)
-Compute the gradient for the PCFM algorithm.
-  ...
-# Arguments
-- `B::Array`: M X M Orthogonal basis.
-- `Bb::Array`: 2M-1 X M Orthogonal basis.
-- `x::Vector`: M X 1 Phase coefficients.
-- `m::Integer`: Size.
-- `u::Vector`: 2M-1 X 1 Window Function.
-- `a::Integer`: Log base. If zero than use non-log version.
-...
-"""
+
 function ∇J(B,Bb,x,m,u,a)
+  """
+    ∇J(B,Bb,x,m,u,a)
+  Compute the gradient for the PCFM algorithm.
+    ...
+  # Arguments
+  - `B::Array`: M X M Orthogonal basis.
+  - `Bb::Array`: 2M-1 X M Orthogonal basis.
+  - `x::Vector`: M X 1 Phase coefficients.
+  - `m::Integer`: Size.
+  - `u::Vector`: 2M-1 X 1 Window Function.
+  - `a::Integer`: Log base. If zero than use non-log version.
+  ...
+  """
   s = exp.(im.*B*x)
   sb = vcat(s, zeros(m-1,1))
   sbf =  fftshift(fft(sb))
@@ -34,16 +77,18 @@ function ∇J(B,Bb,x,m,u,a)
   #Need shift since PSD is centered about 0.
   return (J,factor/(J).*transpose(Bb)*imag.(conj.(sb).*ifft(ifftshift(diff.*sbf))))
 end
-"""
-  funPcfmHelper(m,K)
-Computes extra values for use in gradient calculation.
-  ...
-# Arguments
-- `m::Integer`: Size.
-- `K::Integer`: Oversampling Factor.
-...
-"""
+
+
 function funPcfmHelper(m,K)
+  """
+  funPcfmHelper(m,K)
+  Computes extra values for use in gradient calculation.
+    ...
+  # Arguments
+  - `m::Integer`: Size.
+  - `K::Integer`: Oversampling Factor.
+  ...
+  """
   nt = m
   minAlpha = -pi/K
   maxAlpha = pi/K
@@ -60,18 +105,19 @@ function funPcfmHelper(m,K)
   Bb = vcat(B,zeros(m-1, nt))
   return (B,Bb,x)
 end
-"""
-  funPcfm(u,a,iter,K)
-PCFM algorithm. Returns a randomly initialized vector with PSD of u.
-  ...
-# Arguments
-- `u::Vector`: Window Function PSD.
-- `a::Integer`: Log base. If zero do non log version.
-- `iter::Integer`: Number of iterations.
-- `K::Integer`: Oversampling Factor.
-...
-"""
+
 function funPcfm(u,a,iter,K)
+  """
+  funPcfm(u,a,iter,K)
+  PCFM algorithm. Returns a randomly initialized vector with PSD of u.
+    ...
+  # Arguments
+  - `u::Vector`: Window Function PSD.
+  - `a::Integer`: Log base. If zero do non log version.
+  - `iter::Integer`: Number of iterations.
+  - `K::Integer`: Oversampling Factor.
+  ...
+  """
   #Calculate m from u.
   m = trunc(Int,(length(u)+1)/2)
   (B,Bb,x) = funPcfmHelper(m,K)
@@ -101,3 +147,7 @@ function funPcfm(u,a,iter,K)
   end
   return x
 end
+
+m = 900
+k = 3
+(s,alpha,B) = pcfm(m,k)
