@@ -15,46 +15,53 @@ function ∇J(B,x,u,l)
   - `u::Vector`: 2M-1 X 1 Frequency template  
   - `l::Integer`: Norm to use for error calculation
   """
+  # Oversampled phase code length
   m = size(B,1)
+  # Zero-pad basis matrix to length 2M-1 (for FFT)
   Bb = vcat(B,zeros(m-1,trunc(Int,m/k)))
+  # PCFM representation of the input phase code vector
   s = exp.(im.*B*x)
+  # Pad the waveform to length 2M-1
   sb = vcat(s, zeros(m-1,1))
+  # Compute the (normalized) PSD of the PCFM waveform
   sbf =  fftshift(fft(sb))
   sbf = sbf ./maximum(abs.(sbf))
+  # FTE calculation
   J = norm(abs.(sbf).^2 .-u,l)
-  #Need shift since PSD is centered about 0.
-  return (J,2/(J).*transpose(Bb)*imag.(conj.(sb).*ifft(ifftshift((abs.(sbf).^2 .-u).*sbf))))
+  # Return the error and gradient
+  return (J,
+  2/(J).*transpose(Bb)*imag.(conj.(sb).*ifft(ifftshift((abs.(sbf).^2 .-u).*sbf))))
 end
 
-function ∇Jlog(B,Bb,x,m,u,a)
+function ∇logJ(B,x,u,a,l)
   """
-  ∇J(B,Bb,x,m,u,a)
+  ∇logJ(B,Bb,x,m,u,a)
   Compute the log frequency template error (log-FTE) and its associated gradient
 
   # Arguments
   - `B::Array`: M X M Orthogonal basis
-  - `Bb::Array`: 2M-1 X M Orthogonal basis
   - `x::Vector`: M X 1 phase code vector
-  - `m::Integer`: Phase code length
-  - `u::Vector`: 2M-1 X 1 Frequency template
+  - `u::Vector`: 2M-1 X 1 Frequency template  
   - `a::Integer`: Log base for error computation
+  - `l::Integer`: Norm to use for error calculation
   
   """
-  # TODO: Implement me
+  # Oversampled phase code length
+  m = size(B,1)
+  # Zero-pad basis matrix to length 2M-1 (for FFT)
+  Bb = vcat(B,zeros(m-1,trunc(Int,m/k)))
+  # PCFM representation of the input phase code vector
   s = exp.(im.*B*x)
+  # Pad the waveform to length 2M-1
   sb = vcat(s, zeros(m-1,1))
+  # Compute the (normalized) PSD of the PCFM waveform
   sbf =  fftshift(fft(sb))
   sbf = sbf ./maximum(abs.(sbf))
-  if(a == 0)
-    diff = abs.(sbf).^2 .-u
-    factor = 2
-  else
-    diff = log.(a,abs.(sbf).^2) .-log.(a,u)
-    factor = 2/(log(a))
-  end
-  J = norm(diff,2)
-  #Need shift since PSD is centered about 0.
-  return (J,factor/(J).*transpose(Bb)*imag.(conj.(sb).*ifft(ifftshift(diff.*sbf))))
+  # log-FTE calculation
+  J = norm(log.(a,abs.(sbf).^2) .-log.(a,u),l)
+  # Return the error and gradient
+  return (J,
+  (2/(log(a)*J)).*transpose(Bb)*imag.(conj.(sb).*ifft(ifftshift((log.(a,abs.(sbf).^2) .-log.(a,u)).*sbf))))
 end
 
 
@@ -73,8 +80,6 @@ function funPcfm(u,a,iter,K)
   #Calculate m from u.
   m = trunc(Int,(length(u)+1)/2)
   (s,x,B) = pcfm(m,K)
-  Bb = vcat(B,zeros(m-1, trunc(Int,m/k)))
-  # (B,Bb,x) = funPcfmHelper(m,K)
   #Gradient Descent Parameters
   μ = 0.75
   β = 0.5
@@ -84,7 +89,8 @@ function funPcfm(u,a,iter,K)
   vtOld = 0;
   while i <= iter
     #Nesterov Accelerated Descent
-    (J,∇)=∇J(B,x.-β.*vtOld,u,2)
+    # (J,∇)=∇J(B,x.-β.*vtOld,u,2)
+    (J,∇) = ∇logJ(B,x.-β.*vtOld,u,a,2)
     Jvec[i:end] .= J
     vt = β.*vtOld.+μ.*∇
     x -= vt
@@ -109,7 +115,7 @@ m = 150
 k = 3
 (s,alpha,B) = pcfm(m,k)
 # Window function
-u = gaussian((2*m-1,1),0.15; padding = 0, zerophase = false)
+u = gaussian((2*m-1,1),0.1; padding = 0, zerophase = false)
 u[findall(<(-50), 10*log10.(u))] .= 10^-5
 u = abs.(u).^2
 a = 0
