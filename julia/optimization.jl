@@ -4,20 +4,43 @@ using DSP
 using Plots
 include("pcfm.jl")
 
-function ∇J(B,Bb,x,m,u,a)
+function ∇J(B,x,u,l)
   """
-    ∇J(B,Bb,x,m,u,a)
-  Compute the gradient for the PCFM algorithm.
-    ...
+  ∇J(B,Bb,x,m,u,a)
+  Compute the frequency template error (FTE) and its associated gradient
+
   # Arguments
-  - `B::Array`: M X M Orthogonal basis.
-  - `Bb::Array`: 2M-1 X M Orthogonal basis.
-  - `x::Vector`: M X 1 Phase coefficients.
-  - `m::Integer`: Size.
-  - `u::Vector`: 2M-1 X 1 Window Function.
-  - `a::Integer`: Log base. If zero than use non-log version.
-  ...
+  - `B::Array`: M X M Orthogonal basis
+  - `x::Vector`: M X 1 phase code vector
+  - `u::Vector`: 2M-1 X 1 Frequency template  
+  - `l::Integer`: Norm to use for error calculation
   """
+  m = size(B,1)
+  Bb = vcat(B,zeros(m-1,trunc(Int,m/k)))
+  s = exp.(im.*B*x)
+  sb = vcat(s, zeros(m-1,1))
+  sbf =  fftshift(fft(sb))
+  sbf = sbf ./maximum(abs.(sbf))
+  J = norm(abs.(sbf).^2 .-u,l)
+  #Need shift since PSD is centered about 0.
+  return (J,2/(J).*transpose(Bb)*imag.(conj.(sb).*ifft(ifftshift((abs.(sbf).^2 .-u).*sbf))))
+end
+
+function ∇Jlog(B,Bb,x,m,u,a)
+  """
+  ∇J(B,Bb,x,m,u,a)
+  Compute the log frequency template error (log-FTE) and its associated gradient
+
+  # Arguments
+  - `B::Array`: M X M Orthogonal basis
+  - `Bb::Array`: 2M-1 X M Orthogonal basis
+  - `x::Vector`: M X 1 phase code vector
+  - `m::Integer`: Phase code length
+  - `u::Vector`: 2M-1 X 1 Frequency template
+  - `a::Integer`: Log base for error computation
+  
+  """
+  # TODO: Implement me
   s = exp.(im.*B*x)
   sb = vcat(s, zeros(m-1,1))
   sbf =  fftshift(fft(sb))
@@ -33,6 +56,7 @@ function ∇J(B,Bb,x,m,u,a)
   #Need shift since PSD is centered about 0.
   return (J,factor/(J).*transpose(Bb)*imag.(conj.(sb).*ifft(ifftshift(diff.*sbf))))
 end
+
 
 function funPcfm(u,a,iter,K)
   """
@@ -60,7 +84,7 @@ function funPcfm(u,a,iter,K)
   vtOld = 0;
   while i <= iter
     #Nesterov Accelerated Descent
-    (J,∇)=∇J(B,Bb,x.-β.*vtOld,m,u,a)
+    (J,∇)=∇J(B,x.-β.*vtOld,u,2)
     Jvec[i:end] .= J
     vt = β.*vtOld.+μ.*∇
     x -= vt
