@@ -64,6 +64,22 @@ function ∇logJ(B, x, u, a, l)
     (2 / (log(a) * J)) .* transpose(Bb) * imag.(conj.(sb) .* ifft(ifftshift((log.(a, abs.(sbf) .^ 2) .- log.(a, u)) .* sbf))))
 end
 
+function profm(u, iter)
+  """
+  profm(u,iter)
+
+  Iteratively optimize the PSD using alternating projections as described in the
+  PRO-FM paper.
+  """
+  pk = exp.(im .* angle.(ifft(ifftshift(u))))
+  for ii = 1:iter
+    rk = ifft(ifftshift(abs.(u) .* exp.(im .* angle.(fftshift(fft(pk))))))
+    pk = exp.(im .* angle.(rk))
+    #display(plot(abs.(fftshift(fft(pk)))))
+  end
+  return pk
+end
+
 function optimize(u, a, k, tol, maxIter)
   """
   optimize(u,a,tol,maxIter)
@@ -93,12 +109,11 @@ function optimize(u, a, k, tol, maxIter)
     if ii == 1
       pk = ∇
     else
-      pk = ∇ .+ β.*pkOld
+      pk = ∇ .+ β .* pkOld
     end
-    # pk = β .* pkOld .+ μ .* ∇
     xOld = x
-    x -= μ.*pk
-    if all(abs.(x.-xOld) .< tol)
+    x -= μ .* pk
+    if all(abs.(x .- xOld) .< tol)
       break
     end
     pkOld = pk
@@ -108,9 +123,8 @@ function optimize(u, a, k, tol, maxIter)
     sb = vcat(s, zeros(m - 1, 1))
     sbf = fftshift(fft(sb))
     sbf = sbf ./ maximum(abs.(sbf))
-    corr = abs.(autocorr(s)) ./ maximum(abs.(autocorr(s)))
+    # corr = abs.(autocorr(s)) ./ maximum(abs.(autocorr(s)))
     # display(plot(10*log10.(corr),ylim=(-50,0)))
-
     display(plot!(10 * log10.(u), ylim = (-50, 0)))
     display(plot(10 * log10.(abs.(sbf) .^ 2), ylim = (-50, 0)))
   end
@@ -118,7 +132,7 @@ function optimize(u, a, k, tol, maxIter)
 
 end
 
-m = 300
+m = 150
 k = 3
 (s, alpha, B) = pcfm(m, k)
 # Window function
@@ -127,4 +141,4 @@ u[findall(<(-50), 10 * log10.(u))] .= 10^-5
 u = abs.(u) .^ 2
 a = 10
 iter = 1000
-optimize(u, a, k, 5e-4, iter)
+optimize(u, a, k, 4e-4, iter)
