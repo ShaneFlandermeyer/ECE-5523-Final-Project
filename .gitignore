@@ -31,9 +31,8 @@
 *.out
 *.app
 
-# Python
-*.ipynb_checkpoints
-*__pycache__
+*build/
+*data/
+*.csv
+*.vscode/
 
-# Hidden folders
-*.vscode
