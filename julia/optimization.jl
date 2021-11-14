@@ -4,6 +4,11 @@ using DSP
 using Plots
 include("pcfm.jl")
 
+
+function autocorr(x)
+  return conv(x, conj.(x[end:-1:1]))
+end
+
 function ∇J(B, x, u, l)
   """
   ∇J(B,Bb,x,m,u,a)
@@ -18,7 +23,7 @@ function ∇J(B, x, u, l)
   # Oversampled phase code length
   m = size(B, 1)
   # Zero-pad basis matrix to length 2M-1 (for FFT)
-  Bb = vcat(B, zeros(m - 1, trunc(Int, m / k)))
+  Bb = vcat(B, zeros(m - 1, trunc(Int, size(B,2))))
   # PCFM representation of the input phase code vector
   s = exp.(im .* B * x)
   # Pad the waveform to length 2M-1
@@ -49,7 +54,7 @@ function ∇logJ(B, x, u, a, l)
   # Oversampled phase code length
   m = size(B, 1)
   # Zero-pad basis matrix to length 2M-1 (for FFT)
-  Bb = vcat(B, zeros(m - 1, trunc(Int, m / k)))
+  Bb = vcat(B, zeros(m - 1, size(B, 2)))
   # PCFM representation of the input phase code vector
   s = exp.(im .* B * x)
   # Pad the waveform to length 2M-1
@@ -90,6 +95,10 @@ function optimize(u, a, k, tol, maxIter)
   - `tol::Float`: Tolerance for early stopping
   - `maxIter::Integer`: Maximum number of iterations
   """
+  # TODO: Allow the user to decide wheter or not to plot the results
+  # TODO: Allow the user to decide which optimization method to use
+  # TODO: Allow the user to save the results as a gif
+
   #Calculate m from u.
   m = trunc(Int, (length(u) + 1) / 2)
   # Get a randomly initialized phase change vector and phase shaping basis
@@ -101,10 +110,11 @@ function optimize(u, a, k, tol, maxIter)
   # Store the error at each iteration
   Jvec = ones(maxIter - 1, 1)
   pkOld = 0
+  sbf = zeros(length(u), 1)
   for ii = 1:maxIter
     # Heavy-ball gradient descent
-    # (J, ∇) = ∇J(B, x, u, 2)
-    (J, ∇) = ∇logJ(B, x, u, a, 2)
+    (J, ∇) = ∇J(B, x, u, 2)
+    # (J, ∇) = ∇logJ(B, x, u, a, 2)
     Jvec[ii:end] .= J
     if ii == 1
       pk = ∇
@@ -118,27 +128,19 @@ function optimize(u, a, k, tol, maxIter)
     end
     pkOld = pk
 
-    #Extra Functions for visulation.
+    # Extra Functions for visualization.
+    
     s = exp.(im .* B * x)
     sb = vcat(s, zeros(m - 1, 1))
     sbf = fftshift(fft(sb))
     sbf = sbf ./ maximum(abs.(sbf))
-    # corr = abs.(autocorr(s)) ./ maximum(abs.(autocorr(s)))
-    # display(plot(10*log10.(corr),ylim=(-50,0)))
-    display(plot!(10 * log10.(u), ylim = (-50, 0)))
-    display(plot(10 * log10.(abs.(sbf) .^ 2), ylim = (-50, 0)))
+    corr = abs.(autocorr(s)) ./ maximum(abs.(autocorr(s)))
+    p1 = plot(10 * log10.(abs.(sbf) .^ 2), ylim = (-50, 0))
+    plot!(10 * log10.(u), ylim = (-50, 0))
+    p2 = plot(10 * log10.(corr), ylim = (-30, 0))
+    p3 = plot(Jvec)
+    display(plot(p1, p2, p3, layout = (3, 1)))
   end
-  return x
+  return (x, sbf)
 
 end
-
-m = 150
-k = 3
-(s, alpha, B) = pcfm(m, k)
-# Window function
-u = gaussian((2 * m - 1, 1), 0.15; padding = 0, zerophase = false)
-u[findall(<(-50), 10 * log10.(u))] .= 10^-5
-u = abs.(u) .^ 2
-a = 10
-iter = 1000
-optimize(u, a, k, 4e-4, iter)

@@ -28,7 +28,3 @@ function pcfm(m,k)
   s = exp.(im.*B*alpha)
   return (s,alpha,B)
 end
-
-function autocorr(x)
-  return conv(x,conj.(x[end:-1:1]))
-end
