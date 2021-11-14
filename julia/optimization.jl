@@ -85,17 +85,16 @@ function profm(u, iter)
   return pk
 end
 
-function optimize(u, a, k, tol, maxIter)
+function optimize(u, k; a=10,  tol=1e-5, maxIter=1000, showPlots=true)
   """
   optimize(u,a,tol,maxIter)
 
   # Arguments
-  - `u::Vector`: 2M-1 X 1 Frequency template
-  - `a::Integer`: Log base for log-FTE (ignored if regular FTE is used)
-  - `tol::Float`: Tolerance for early stopping
+  - `u::Matrix`: 2M-1 X 1 Frequency template
+  - `a::Int`: Log base for log-FTE (ignored if regular FTE is used)
+  - `tol::Float64`: Tolerance for early stopping
   - `maxIter::Integer`: Maximum number of iterations
   """
-  # TODO: Allow the user to decide wheter or not to plot the results
   # TODO: Allow the user to decide which optimization method to use
   # TODO: Allow the user to save the results as a gif
 
@@ -128,18 +127,25 @@ function optimize(u, a, k, tol, maxIter)
     end
     pkOld = pk
 
-    # Extra Functions for visualization.
-    
-    s = exp.(im .* B * x)
-    sb = vcat(s, zeros(m - 1, 1))
-    sbf = fftshift(fft(sb))
-    sbf = sbf ./ maximum(abs.(sbf))
-    corr = abs.(autocorr(s)) ./ maximum(abs.(autocorr(s)))
-    p1 = plot(10 * log10.(abs.(sbf) .^ 2), ylim = (-50, 0))
-    plot!(10 * log10.(u), ylim = (-50, 0))
-    p2 = plot(10 * log10.(corr), ylim = (-30, 0))
-    p3 = plot(Jvec)
-    display(plot(p1, p2, p3, layout = (3, 1)))
+    if showPlots 
+      # Compute and plot the PSD
+      s = exp.(im .* B * x)
+      sb = vcat(s, zeros(m - 1, 1))
+      sbf = fftshift(fft(sb))
+      sbf = sbf ./ maximum(abs.(sbf))
+      p1 = plot(10 * log10.(abs.(sbf) .^ 2), ylim = (-50, 0))
+      # Compute and plot the autocorrelation
+      corr = abs.(autocorr(s)) ./ maximum(abs.(autocorr(s)))      
+      plot!(10 * log10.(u), ylim = (-50, 0))
+      # Compute and plot the current error
+      p2 = plot(10 * log10.(corr), ylim = (-30, 0))
+      p3 = plot(Jvec)
+      display(plot(p1, p2, p3, layout = (3, 1)))
+    end
+  end
+  if savePlots
+    # Save the animation as a gif
+    gif(anim, "test.gif", fps=100)
   end
   return (x, sbf)
 
