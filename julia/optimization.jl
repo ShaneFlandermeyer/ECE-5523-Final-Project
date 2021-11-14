@@ -104,7 +104,7 @@ function optimize(u, k; a=10,  tol=1e-5, maxIter=1000, showPlots=true)
   # functions from PCFM generator
   (_, x, B) = pcfm(m, k)
   # Gradient descent Parameters
-  μ = 0.75
+  μ = 0.5
   β = 0.9
   # Store the error at each iteration
   Jvec = ones(maxIter - 1, 1)
@@ -112,21 +112,20 @@ function optimize(u, k; a=10,  tol=1e-5, maxIter=1000, showPlots=true)
   sbf = zeros(length(u), 1)
   for ii = 1:maxIter
     # Heavy-ball gradient descent
-    (J, ∇) = ∇J(B, x, u, 2)
-    # (J, ∇) = ∇logJ(B, x, u, a, 2)
+    # (J, ∇) = ∇J(B, x, u, 2)
+    (J, ∇) = ∇logJ(B, x, u, a, 2)
     Jvec[ii:end] .= J
     if ii == 1
       pk = ∇
     else
       pk = ∇ .+ β .* pkOld
     end
-    xOld = x
     x -= μ .* pk
-    if all(abs.(x .- xOld) .< tol)
+    if all(abs.(pk .- pkOld) .< tol)
       break
     end
     pkOld = pk
-
+    # Plots
     if showPlots 
       # Compute and plot the PSD
       s = exp.(im .* B * x)
@@ -143,10 +142,7 @@ function optimize(u, k; a=10,  tol=1e-5, maxIter=1000, showPlots=true)
       display(plot(p1, p2, p3, layout = (3, 1)))
     end
   end
-  if savePlots
-    # Save the animation as a gif
-    gif(anim, "test.gif", fps=100)
-  end
-  return (x, sbf)
+  s = exp.(im .* B * x)
+  return (x,s)
 
 end

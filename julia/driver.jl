@@ -23,7 +23,7 @@ end
 # PCFM Waveform Parameters
 # ---------------
 # Oversampled code length
-m = 150
+m = 900
 # Oversampling factor
 k = 3
 # Log base for log-FTE computation
@@ -34,10 +34,11 @@ a = 10
 # Window length
 l = 2 * m - 1
 # Full-width 3dB (normalized) bandwidth
-bandwidth = 0.5
+bandwidth = 0.2
 sigma = bandwidth / (2 * sqrt(2 * log(2)))
 # Window standard deviation
-u = DSP.Windows.gaussian((l, 1), 0.1)
+# sigma = 0.1
+u = DSP.Windows.gaussian((l, 1), sigma)
 # In practice, we probably won't be able to optimize the PSD below -50 dB, so
 # clip all window values below it
 u[findall(<(-50), 10 * log10.(u))] .= 10^-5
@@ -45,5 +46,7 @@ u[findall(<(-50), 10 * log10.(u))] .= 10^-5
 # Simulation Parameters
 # ---------------------
 maxIter = 1000
-ϵ = 1e-4
-(x, sbf) = NoiseWaveform.optimize(u, k, a = 10, tol = ϵ, maxIter = maxIter, showPlots = true)
+ϵ = 1e-5
+(x,s) = NoiseWaveform.optimize(u, k, a = 10, tol = ϵ, maxIter = maxIter, showPlots = true)
+
+write_binary_file(s, "data/gaussian.bin")
