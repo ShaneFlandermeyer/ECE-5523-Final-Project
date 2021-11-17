@@ -35,7 +35,7 @@ a = 10
 # Window length
 l = 2 * m - 1
 # Full-width 3dB (normalized) bandwidth
-bandwidth = 0.25
+bandwidth = 0.15
 sigma = bandwidth / (2 * sqrt(2 * log(2)))
 # Window standard deviation
 # sigma = 0.1

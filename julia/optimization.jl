@@ -111,17 +111,20 @@ function optimize(u, nWaveforms, k; a=10,  tol=1e-5, maxIter=1000, showPlots=tru
   Jvec = ones(maxIter - 1, 1)
   pkOld = 0
   sbf = zeros(length(u), nWaveforms)
-  @showprogress 1 "Computing..." for ii = 1:maxIter
+  anim = @animate for ii = 1:maxIter
     # Heavy-ball gradient descent
-    # (J, ∇) = ∇J(B, x, u, 2)
-    (J, ∇) = ∇logJ(B, x, u, a, 2)
+    (J, ∇) = ∇J(B, x, u, 2)
+    # (J, ∇) = ∇logJ(B, x, u, a, 2)
     Jvec[ii:end] .= J
+    # Update the search direction
     if ii == 1
       pk = ∇
     else
       pk = ∇ .+ β .* pkOld
     end
+    # Update x 
     x -= μ .* pk
+    # Stopping condition
     if all(abs.(pk .- pkOld) .< tol)
       break
     end
@@ -143,10 +146,10 @@ function optimize(u, nWaveforms, k; a=10,  tol=1e-5, maxIter=1000, showPlots=tru
       # Compute and plot the current error
       
       p3 = plot(Jvec)
-      display(plot(p1, p2, p3, layout = (3, 1)))
+      plot(p1, p2, p3, layout = (3, 1))
     end
   end
-  # gif(anim, "anim_fps30.gif", fps = 30)
+  gif(anim, "anim_fps30.gif", fps = 30)
   s = exp.(im .* B * x)
   return (x,s)
 
