@@ -4,6 +4,7 @@ using Plots
 using DSP
 using FFTW
 include("NoiseWaveform.jl")
+
 """
 write_binary_file(data,filename,dtype)
 
@@ -13,7 +14,7 @@ write_binary_file(data,filename,dtype)
 - `dtype::DataType`: Data type of the data to be saved
                      Default: `Matrix{ComplexF32}`
 """
-function write_binary_file(data, filename::String, dtype::DataType=Matrix{ComplexF32})
+function write_binary_file(data, filename::String, dtype::DataType = Matrix{ComplexF32})
     f = open(filename, "w")
     data = convert(dtype, data)
     write(f, data)
@@ -35,7 +36,7 @@ a = 10
 # Window length
 l = 2 * m - 1
 # Full-width 3dB (normalized) bandwidth
-bandwidth = 0.15
+bandwidth = 0.1
 sigma = bandwidth / (2 * sqrt(2 * log(2)))
 # Window standard deviation
 # sigma = 0.1
@@ -46,9 +47,9 @@ u[findall(<(-50), 10 * log10.(u))] .= 10^-5
 
 # Simulation Parameters
 # ---------------------
-maxIter = 1000
+maxIter = 500
 ϵ = 1e-5
 filename = "figures/gaussian.gif"
-(x, s) = NoiseWaveform.optimize(u, nWaveforms, k, savePlots=true, filename=filename)
+(x, s) = NoiseWaveform.optimize(u, nWaveforms, k, maxIter = 500, savePlots = true, filename = filename)
 
 write_binary_file(s, "data/gaussian.bin")
