@@ -25,7 +25,7 @@ end
 # ---------------
 nWaveforms = 1
 # Oversampled code length
-m = 150
+m = 300
 # Oversampling factor
 k = 3
 # Log base for log-FTE computation
@@ -47,9 +47,9 @@ u[findall(<(-50), 10 * log10.(u))] .= 10^-5
 
 # Simulation Parameters
 # ---------------------
-maxIter = 500
+maxIter = 1000
 ϵ = 1e-5
 filename = "figures/gaussian.gif"
-(x, s) = NoiseWaveform.optimize(u, nWaveforms, k, maxIter = 500, savePlots = true, filename = filename)
+(x, s) = NoiseWaveform.optimize(u, nWaveforms, k, maxIter = maxIter, savePlots = true, filename = filename)
 
 write_binary_file(s, "data/gaussian.bin")
