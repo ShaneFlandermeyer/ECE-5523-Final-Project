@@ -35,7 +35,7 @@ a = 10
 # Window length
 l = 2 * m - 1
 # Full-width 3dB (normalized) bandwidth
-bandwidth = 0.1
+bandwidth = 0.25
 sigma = bandwidth / (2 * sqrt(2 * log(2)))
 # Window standard deviation
 # sigma = 0.1
@@ -46,7 +46,7 @@ u[findall(<(-50), 10 * log10.(u))] .= 10^-5
 
 # Simulation Parameters
 # ---------------------
-maxIter = 5000
+maxIter = 1000
 ϵ = 1e-5
 (x, s) = NoiseWaveform.optimize(u, nWaveforms, k, a=10, tol=ϵ, maxIter=maxIter, showPlots=true)
 

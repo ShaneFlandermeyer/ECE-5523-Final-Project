@@ -82,7 +82,6 @@ function profm(u, iter)
   for ii = 1:iter
     rk = ifft(ifftshift(abs.(u) .* exp.(im .* angle.(fftshift(fft(pk))))))
     pk = exp.(im .* angle.(rk))
-    #display(plot(abs.(fftshift(fft(pk)))))
   end
   return pk
 end
@@ -116,16 +115,16 @@ function optimize(u, nWaveforms, k; a=10,  tol=1e-5, maxIter=1000, showPlots=tru
     # Heavy-ball gradient descent
     # (J, ∇) = ∇J(B, x, u, 2)
     (J, ∇) = ∇logJ(B, x, u, a, 2)
-    # Jvec[ii:end] .= J
+    Jvec[ii:end] .= J
     if ii == 1
       pk = ∇
     else
       pk = ∇ .+ β .* pkOld
     end
     x -= μ .* pk
-    # if all(abs.(pk .- pkOld) .< tol)
-    #   break
-    # end
+    if all(abs.(pk .- pkOld) .< tol)
+      break
+    end
     pkOld = pk
     # Plots
     if showPlots 
@@ -137,15 +136,14 @@ function optimize(u, nWaveforms, k; a=10,  tol=1e-5, maxIter=1000, showPlots=tru
       sbf = sbf ./ maximum(abs.(sbf),dims=1)
       p1 = plot(10 * log10.(abs.(sbf) .^ 2), ylim = (-50, 0))
       plot!(10 * log10.(u), ylim = (-50, 0))
-      display(p1)
       # Compute and plot the autocorrelation
-      # corr = abs.(autocorr(s)) ./ maximum(abs.(autocorr(s)))      
+      corr = abs.(autocorr(s)) ./ maximum(abs.(autocorr(s)))      
       
-      # p2 = plot(10 * log10.(corr), ylim = (-30, 0))
+      p2 = plot(10 * log10.(corr), ylim = (-30, 0))
       # Compute and plot the current error
       
-      # p3 = plot(Jvec)
-      # display(plot(p1, p2, p3, layout = (3, 1)))
+      p3 = plot(Jvec)
+      display(plot(p1, p2, p3, layout = (3, 1)))
     end
   end
   # gif(anim, "anim_fps30.gif", fps = 30)
