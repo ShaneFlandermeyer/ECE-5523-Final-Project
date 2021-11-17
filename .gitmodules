@@ -1,3 +1,0 @@
-[submodule "uhd-radar"]
-	path = uhd-radar
-	url = git@github.com:ShaneFlandermeyer/uhd-radar.git
