@@ -13,17 +13,18 @@ write_binary_file(data,filename,dtype)
 - `dtype::DataType`: Data type of the data to be saved
                      Default: `Matrix{ComplexF32}`
 """
-function write_binary_file(data, filename::String, dtype::DataType = Matrix{ComplexF32})
-  f = open(filename, "w")
-  data = convert(dtype, data)
-  write(f, data)
-  close(f)
+function write_binary_file(data, filename::String, dtype::DataType=Matrix{ComplexF32})
+    f = open(filename, "w")
+    data = convert(dtype, data)
+    write(f, data)
+    close(f)
 end
 
 # PCFM Waveform Parameters
 # ---------------
+nWaveforms = 1
 # Oversampled code length
-m = 900
+m = 150
 # Oversampling factor
 k = 3
 # Log base for log-FTE computation
@@ -34,7 +35,7 @@ a = 10
 # Window length
 l = 2 * m - 1
 # Full-width 3dB (normalized) bandwidth
-bandwidth = 0.2
+bandwidth = 0.25
 sigma = bandwidth / (2 * sqrt(2 * log(2)))
 # Window standard deviation
 # sigma = 0.1
@@ -47,6 +48,6 @@ u[findall(<(-50), 10 * log10.(u))] .= 10^-5
 # ---------------------
 maxIter = 1000
 ϵ = 1e-5
-(x,s) = NoiseWaveform.optimize(u, k, a = 10, tol = ϵ, maxIter = maxIter, showPlots = true)
+(x, s) = NoiseWaveform.optimize(u, nWaveforms, k, a=10, tol=ϵ, maxIter=maxIter, showPlots=true)
 
 write_binary_file(s, "data/gaussian.bin")

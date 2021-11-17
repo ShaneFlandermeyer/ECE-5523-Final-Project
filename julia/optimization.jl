@@ -2,6 +2,8 @@ using FFTW
 using LinearAlgebra
 using DSP
 using Plots
+using Statistics
+using ProgressMeter
 include("pcfm.jl")
 
 
@@ -27,7 +29,7 @@ function ∇J(B, x, u, l)
   # PCFM representation of the input phase code vector
   s = exp.(im .* B * x)
   # Pad the waveform to length 2M-1
-  sb = vcat(s, zeros(m - 1, 1))
+  sb = vcat(s, zeros(m - 1, size(s,2)))
   # Compute the (normalized) PSD of the PCFM waveform
   sbf = fftshift(fft(sb))
   sbf = sbf ./ maximum(abs.(sbf))
@@ -58,10 +60,10 @@ function ∇logJ(B, x, u, a, l)
   # PCFM representation of the input phase code vector
   s = exp.(im .* B * x)
   # Pad the waveform to length 2M-1
-  sb = vcat(s, zeros(m - 1, 1))
+  sb = vcat(s, zeros(m - 1, size(s,2)))
   # Compute the (normalized) PSD of the PCFM waveform
   sbf = fftshift(fft(sb))
-  sbf = sbf ./ maximum(abs.(sbf))
+  sbf = sbf ./ maximum(abs.(sbf),dims=1)
   # log-FTE calculation
   J = norm(log.(a, abs.(sbf) .^ 2) .- log.(a, u), l)
   # Return the error and gradient
@@ -80,12 +82,11 @@ function profm(u, iter)
   for ii = 1:iter
     rk = ifft(ifftshift(abs.(u) .* exp.(im .* angle.(fftshift(fft(pk))))))
     pk = exp.(im .* angle.(rk))
-    #display(plot(abs.(fftshift(fft(pk)))))
   end
   return pk
 end
 
-function optimize(u, k; a=10,  tol=1e-5, maxIter=1000, showPlots=true)
+function optimize(u, nWaveforms, k; a=10,  tol=1e-5, maxIter=1000, showPlots=true)
   """
   optimize(u,a,tol,maxIter)
 
@@ -102,15 +103,15 @@ function optimize(u, k; a=10,  tol=1e-5, maxIter=1000, showPlots=true)
   m = trunc(Int, (length(u) + 1) / 2)
   # Get a randomly initialized phase change vector and phase shaping basis
   # functions from PCFM generator
-  (_, x, B) = pcfm(m, k)
+  (_, x, B) = pcfm(m, k, nWaveforms)
   # Gradient descent Parameters
   μ = 0.5
   β = 0.9
   # Store the error at each iteration
   Jvec = ones(maxIter - 1, 1)
   pkOld = 0
-  sbf = zeros(length(u), 1)
-  for ii = 1:maxIter
+  sbf = zeros(length(u), nWaveforms)
+  @showprogress 1 "Computing..." for ii = 1:maxIter
     # Heavy-ball gradient descent
     # (J, ∇) = ∇J(B, x, u, 2)
     (J, ∇) = ∇logJ(B, x, u, a, 2)
@@ -129,19 +130,23 @@ function optimize(u, k; a=10,  tol=1e-5, maxIter=1000, showPlots=true)
     if showPlots 
       # Compute and plot the PSD
       s = exp.(im .* B * x)
-      sb = vcat(s, zeros(m - 1, 1))
+      sb = vcat(s, zeros(m - 1, nWaveforms))
       sbf = fftshift(fft(sb))
-      sbf = sbf ./ maximum(abs.(sbf))
+      sbf = mean(sbf,dims=2)
+      sbf = sbf ./ maximum(abs.(sbf),dims=1)
       p1 = plot(10 * log10.(abs.(sbf) .^ 2), ylim = (-50, 0))
+      plot!(10 * log10.(u), ylim = (-50, 0))
       # Compute and plot the autocorrelation
       corr = abs.(autocorr(s)) ./ maximum(abs.(autocorr(s)))      
-      plot!(10 * log10.(u), ylim = (-50, 0))
-      # Compute and plot the current error
+      
       p2 = plot(10 * log10.(corr), ylim = (-30, 0))
+      # Compute and plot the current error
+      
       p3 = plot(Jvec)
       display(plot(p1, p2, p3, layout = (3, 1)))
     end
   end
+  # gif(anim, "anim_fps30.gif", fps = 30)
   s = exp.(im .* B * x)
   return (x,s)
 

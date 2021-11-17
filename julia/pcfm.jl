@@ -3,7 +3,7 @@ using LinearAlgebra
 using DSP
 using Plots
 
-function pcfm(m,k)
+function pcfm(m,k,nWaveforms=1)
   """
   pcfm(m,k)
   Compute the PCFM waveform for a randomly initialized phase code
@@ -17,7 +17,7 @@ function pcfm(m,k)
   # Construct the array of phase code changes
   minAlpha = -pi/k
   maxAlpha = pi/k
-  alpha = minAlpha .+(maxAlpha-minAlpha).*rand(Float64,(n, 1))
+  alpha = minAlpha .+(maxAlpha-minAlpha).*rand(Float64,(n, nWaveforms))
   # Phase shaping filter
   g = ones(k,1)./k
   g = vec(vcat(g,zeros(m-k,1)))
