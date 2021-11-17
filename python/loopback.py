@@ -78,7 +78,6 @@ class loopback(gr.top_block, Qt.QWidget):
         # Variables
         ##################################################
         self.samp_rate = samp_rate = 20e6
-        self.filename_0 = filename_0 = "/home/shane/src/ece5523-project/data/gaussian.bin"
         self.filename = filename = "/home/shane/src/ece5523-project/data/gaussian.bin"
         self.center_freq = center_freq = 2.4e9
 
@@ -186,12 +185,6 @@ class loopback(gr.top_block, Qt.QWidget):
         self.qtgui_freq_sink_x_0.set_frequency_range(0, self.samp_rate)
         self.uhd_usrp_sink_0.set_samp_rate(self.samp_rate)
         self.uhd_usrp_source_0.set_samp_rate(self.samp_rate)
-
-    def get_filename_0(self):
-        return self.filename_0
-
-    def set_filename_0(self, filename_0):
-        self.filename_0 = filename_0
 
     def get_filename(self):
         return self.filename
