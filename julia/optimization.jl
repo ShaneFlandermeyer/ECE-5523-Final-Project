@@ -86,7 +86,7 @@ function profm(u, iter)
   return pk
 end
 
-function optimize(u, nWaveforms, k; a=10,  tol=1e-5, maxIter=1000, showPlots=true)
+function optimize(u, nWaveforms, k; a=10,  tol=1e-5, maxIter=1000, savePlots=false, filename="anim_fps60.gif")
   """
   optimize(u,a,tol,maxIter)
 
@@ -97,7 +97,6 @@ function optimize(u, nWaveforms, k; a=10,  tol=1e-5, maxIter=1000, showPlots=tru
   - `maxIter::Integer`: Maximum number of iterations
   """
   # TODO: Allow the user to decide which optimization method to use
-  # TODO: Allow the user to save the results as a gif
 
   #Calculate m from u.
   m = trunc(Int, (length(u) + 1) / 2)
@@ -130,26 +129,24 @@ function optimize(u, nWaveforms, k; a=10,  tol=1e-5, maxIter=1000, showPlots=tru
     end
     pkOld = pk
     # Plots
-    if showPlots 
-      # Compute and plot the PSD
-      s = exp.(im .* B * x)
-      sb = vcat(s, zeros(m - 1, nWaveforms))
-      sbf = fftshift(fft(sb))
-      sbf = mean(sbf,dims=2)
-      sbf = sbf ./ maximum(abs.(sbf),dims=1)
-      p1 = plot(10 * log10.(abs.(sbf) .^ 2), ylim = (-50, 0))
-      plot!(10 * log10.(u), ylim = (-50, 0))
-      # Compute and plot the autocorrelation
-      corr = abs.(autocorr(s)) ./ maximum(abs.(autocorr(s)))      
-      
-      p2 = plot(10 * log10.(corr), ylim = (-30, 0))
-      # Compute and plot the current error
-      
-      p3 = plot(Jvec)
-      plot(p1, p2, p3, layout = (3, 1))
-    end
+    # Compute and plot the PSD
+    s = exp.(im .* B * x)
+    sb = vcat(s, zeros(m - 1, nWaveforms))
+    sbf = fftshift(fft(sb))
+    sbf = mean(sbf,dims=2)
+    sbf = sbf ./ maximum(abs.(sbf),dims=1)
+    p1 = plot(10 * log10.(abs.(sbf) .^ 2), ylim = (-50, 0))
+    plot!(10 * log10.(u), ylim = (-50, 0))
+    # Compute and plot the autocorrelation
+    corr = abs.(autocorr(s)) ./ maximum(abs.(autocorr(s)))      
+    p2 = plot(10 * log10.(corr), ylim = (-30, 0))
+    # Compute and plot the current error
+    p3 = plot(Jvec)
+    plot(p1, p2, p3, layout = (3, 1))
   end
-  gif(anim, "anim_fps30.gif", fps = 30)
+  if savePlots
+    gif(anim, filename, fps = 60)
+  end
   s = exp.(im .* B * x)
   return (x,s)
 

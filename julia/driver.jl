@@ -48,6 +48,7 @@ u[findall(<(-50), 10 * log10.(u))] .= 10^-5
 # ---------------------
 maxIter = 1000
 ϵ = 1e-5
-(x, s) = NoiseWaveform.optimize(u, nWaveforms, k, a=10, tol=ϵ, maxIter=maxIter, showPlots=true)
+filename = "figures/gaussian.gif"
+(x, s) = NoiseWaveform.optimize(u, nWaveforms, k, savePlots=true, filename=filename)
 
 write_binary_file(s, "data/gaussian.bin")
